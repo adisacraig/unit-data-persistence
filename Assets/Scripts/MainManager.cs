@@ -6,11 +6,13 @@ using UnityEngine.UI;
 
 public class MainManager : MonoBehaviour
 {
+    public static MainManager Instance;
     public Brick BrickPrefab;
     public int LineCount = 6;
     public Rigidbody Ball;
 
     public Text ScoreText;
+    public Text BestScoreText;
     public GameObject GameOverText;
     
     private bool m_Started = false;
@@ -18,7 +20,22 @@ public class MainManager : MonoBehaviour
     
     private bool m_GameOver = false;
 
-    
+    private void Awake (){
+        if(Instance != null){
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+        BestScoreText.text = $"Best Score : Name: {DataManager.Instance.highScoreUsername} : {DataManager.Instance.highScore}";
+
+        if(DataManager.Instance.currentUsername == null || DataManager.Instance.currentUsername == ""){
+            DataManager.Instance.currentUsername = "anon";
+        }
+        ScoreText.text = $"Score: Name: {DataManager.Instance.currentUsername} : 0";
+
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -52,12 +69,14 @@ public class MainManager : MonoBehaviour
                 Ball.transform.SetParent(null);
                 Ball.AddForce(forceDir * 2.0f, ForceMode.VelocityChange);
             }
+
+            BestScoreText.text = $"Best Score : Name: {DataManager.Instance.highScoreUsername} : {DataManager.Instance.highScore}";
         }
         else if (m_GameOver)
         {
             if (Input.GetKeyDown(KeyCode.Space))
             {
-                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+                SceneManager.LoadScene(0);
             }
         }
     }
@@ -65,12 +84,19 @@ public class MainManager : MonoBehaviour
     void AddPoint(int point)
     {
         m_Points += point;
-        ScoreText.text = $"Score : {m_Points}";
+        ScoreText.text = $"Score: Name: {DataManager.Instance.currentUsername} : {m_Points}";
+
+        if(m_Points > DataManager.Instance.highScore){
+            DataManager.Instance.highScore = m_Points;
+            DataManager.Instance.highScoreUsername = DataManager.Instance.currentUsername;
+        }
     }
 
     public void GameOver()
     {
         m_GameOver = true;
         GameOverText.SetActive(true);
+
+        DataManager.Instance.SaveHighscore();
     }
 }
